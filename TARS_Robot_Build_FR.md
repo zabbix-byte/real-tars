@@ -39,17 +39,19 @@ TARS possède un cerveau à **deux niveaux** : le matériel local (ESP32-S3) et 
 
 ```mermaid
 graph TB
-    subgraph CLOUD["☁️ CLOUD / SERVEUR LOCAL"]
-        OC["🦞 OpenClaw<br/>Framework IA Robotique<br/>• Analyse les commandes<br/>• Gère les compétences<br/>• Orchestre les actions"]
-        CL["🧠 API Anthropic Claude<br/>LLM - raisonnement,<br/>conversation,<br/>prise de décision"]
-        OC <-->|"Requêtes & Réponses"| CL
+    subgraph CLOUD["CLOUD - SERVEUR LOCAL"]
+        OC["OpenClaw - Framework IA Robotique"]
+        CL["API Anthropic Claude - LLM"]
+        OC -->|"Requetes"| CL
+        CL -->|"Reponses"| OC
     end
 
-    subgraph ROBOT["🤖 ROBOT TARS (Physique)"]
-        ESP["📟 XIAO ESP32-S3 Sense<br/>• Exécute les commandes de mouvement (servos)<br/>• Lit les capteurs (VL53L0X, micro, caméra)<br/>• Joue l'audio (I2S → MAX98357)<br/>• Affiche les expressions (OLED)<br/>• Envoie les données des capteurs à OpenClaw"]
+    subgraph ROBOT["ROBOT TARS - Physique"]
+        ESP["XIAO ESP32-S3 Sense"]
     end
 
-    OC <-->|"WiFi<br/>WebSocket / HTTP / MQTT"| ESP
+    OC -->|"WiFi - WebSocket"| ESP
+    ESP -->|"Donnees capteurs"| OC
 ```
 
 ### Pourquoi cette Architecture ?
@@ -269,15 +271,15 @@ void loop() {
 ```mermaid
 graph LR
     subgraph ESP["XIAO ESP32-S3 Sense"]
-        I2C["I2C (SDA/SCL)"]
-        I2S["I2S (BCLK/LRCLK/DIN)"]
-        PWM["PWM (GPIO)"]
-        BAT["Batterie (JST)"]
-        CAM["Caméra + Microphone<br/>(intégrés)"]
+        I2C["I2C SDA/SCL"]
+        I2S["I2S BCLK/LRCLK/DIN"]
+        PWM["PWM GPIO"]
+        BAT["Batterie JST"]
+        CAM["Camera + Microphone"]
     end
 
     I2C --> VL["Capteur VL53L0X"]
-    I2C --> OLED["Écran OLED"]
+    I2C --> OLED["Ecran OLED"]
     I2S --> AMP["Amplificateur MAX98357"]
     PWM --> S1["Servos EMAX"]
     BAT --> LIPO["LiPo 3000mAh"]
@@ -381,15 +383,15 @@ TARS d'Interstellar a des panneaux articulés qui tournent et se plient. Les ser
 ```mermaid
 graph LR
     subgraph SERVO["Servos EMAX"]
-        S1_SIG["Signal (orange) - Servo 1"]
-        S2_SIG["Signal (orange) - Servo 2"]
-        S_VCC["VCC (rouge)"]
-        S_GND["GND (marron)"]
+        S1_SIG["Signal orange - Servo 1"]
+        S2_SIG["Signal orange - Servo 2"]
+        S_VCC["VCC rouge"]
+        S_GND["GND marron"]
     end
 
     subgraph ESP32["ESP32-S3"]
-        E_G7["GPIO7 (PWM)"]
-        E_G8["GPIO8 (PWM)"]
+        E_G7["GPIO7 PWM"]
+        E_G8["GPIO8 PWM"]
     end
 
     STEP["DC-DC Step-Up 5V"]
@@ -433,17 +435,17 @@ graph LR
         A_BCLK["BCLK"]
         A_LRC["LRC"]
         A_DIN["DIN"]
-        A_OUT["+/- Sortie"]
+        A_OUT["Sortie +/-"]
     end
 
     subgraph ESP32["ESP32-S3"]
-        E_G1["GPIO1 (I2S Clock)"]
-        E_G2["GPIO2 (I2S Word Select)"]
-        E_G3["GPIO3 (I2S Data)"]
+        E_G1["GPIO1 I2S Clock"]
+        E_G2["GPIO2 I2S Word Select"]
+        E_G3["GPIO3 I2S Data"]
     end
 
     STEP["Step-Up 5V"]
-    SPK["🔊 Haut-parleur 3W 8Ω"]
+    SPK["Haut-parleur 3W 8 Ohm"]
 
     A_VIN --- STEP
     A_BCLK --- E_G1
@@ -471,14 +473,14 @@ graph LR
 
 ```mermaid
 graph TD
-    BATT["🔋 Batterie LiPo 3.7V 3000mAh"]
+    BATT["Batterie LiPo 3.7V 3000mAh"]
 
-    BATT -->|"Direct"| ESP["📟 XIAO ESP32-S3<br/>(connecteur batterie intégré)<br/>Régulateur interne → 3.3V<br/>pour ESP32, capteurs, OLED"]
+    BATT -->|"Direct"| ESP["XIAO ESP32-S3 - Regulateur 3.3V"]
 
-    BATT -->|"Entrée"| STEP["⚡ DC-DC Step-Up<br/>3.7V → 5V"]
+    BATT -->|"Entree"| STEP["DC-DC Step-Up 3.7V vers 5V"]
 
-    STEP --> SERVOS["⚙️ Servos EMAX (5V)"]
-    STEP --> AMP["🔊 Amplificateur MAX98357 (5V)"]
+    STEP --> SERVOS["Servos EMAX 5V"]
+    STEP --> AMP["Amplificateur MAX98357 5V"]
 ```
 
 ### Autonomie Estimée
@@ -531,24 +533,24 @@ Une fois que tout fonctionne sur breadboard :
 ```mermaid
 graph TB
     subgraph ESP["XIAO ESP32-S3 Sense"]
-        CAM["📷 Caméra OV2640"]
-        MIC["🎤 Microphone PDM"]
-        SDA["GPIO5 (SDA)"]
-        SCL["GPIO6 (SCL)"]
-        BCLK["GPIO1 (BCLK)"]
-        LRC["GPIO2 (LRC)"]
-        DIN["GPIO3 (DIN)"]
-        PWM1["GPIO7 (PWM)"]
-        PWM2["GPIO8 (PWM)"]
+        CAM["Camera OV2640"]
+        MIC["Microphone PDM"]
+        SDA["GPIO5 SDA"]
+        SCL["GPIO6 SCL"]
+        BCLK["GPIO1 BCLK"]
+        LRC["GPIO2 LRC"]
+        DIN["GPIO3 DIN"]
+        PWM1["GPIO7 PWM"]
+        PWM2["GPIO8 PWM"]
         BATC["Connecteur BAT"]
     end
 
-    VL["👁️ VL53L0X"]
-    OLED["🖥️ OLED 2.42&quot;"]
-    AMP["🔊 MAX98357"]
-    SRV1["⚙️ Servo 1"]
-    SRV2["⚙️ Servo 2"]
-    BATT["🔋 LiPo 3.7V 3000mAh"]
+    VL["VL53L0X"]
+    OLED["OLED 2.42 pouces"]
+    AMP["MAX98357"]
+    SRV1["Servo 1"]
+    SRV2["Servo 2"]
+    BATT["LiPo 3.7V 3000mAh"]
 
     SDA -->|"I2C"| VL
     SDA -->|"I2C"| OLED
@@ -561,7 +563,7 @@ graph TB
     PWM2 --> SRV2
     BATC --> BATT
 
-    subgraph POWER["⚡ DC-DC Step-Up 3.7V → 5V"]
+    subgraph POWER["DC-DC Step-Up 3.7V vers 5V"]
         P5V["Sortie 5V"]
     end
 
@@ -653,20 +655,20 @@ graph TB
 ```mermaid
 sequenceDiagram
     actor Utilisateur
-    participant MIC as 🎤 Microphone (ESP32)
-    participant ESP as 📟 ESP32-S3
-    participant OC as 🦞 OpenClaw
-    participant CL as 🧠 API Claude
-    participant HW as ⚙️ Matériel<br/>(Servos/OLED/HP)
+    participant MIC as Microphone ESP32
+    participant ESP as ESP32-S3
+    participant OC as OpenClaw
+    participant CL as API Claude
+    participant HW as Materiel
 
-    Utilisateur->>MIC: "TARS, qu'y a-t-il devant toi ?"
-    MIC->>ESP: Capture audio (PDM)
+    Utilisateur->>MIC: TARS, qu y a-t-il devant toi?
+    MIC->>ESP: Capture audio PDM
     ESP->>OC: Envoi audio via WiFi
-    OC->>OC: Reconnaissance vocale (STT)
-    OC->>CL: System prompt (personnalité TARS, humour 75%)<br/>+ Données capteurs (distance : 1.2m)<br/>+ Texte utilisateur
-    CL->>OC: "Il y a quelque chose à 1.2 mètres.<br/>On dirait un mur. Je ne recommande<br/>pas d'avancer, sauf si tu veux que<br/>je pratique mon imitation d'accordéon."
-    OC->>ESP: cmd: "speak" (lire audio)<br/>cmd: "display" (expression : réflexion → parle)<br/>cmd: "move" (tourner vers l'utilisateur)
-    ESP->>HW: MAX98357 joue la voix<br/>OLED affiche l'animation<br/>Servos ajustent la position
+    OC->>OC: Reconnaissance vocale STT
+    OC->>CL: System prompt + Donnees capteurs + Texte utilisateur
+    CL->>OC: Reponse avec personnalite et humour
+    OC->>ESP: cmd speak + cmd display + cmd move
+    ESP->>HW: Joue la voix + Affiche animation + Ajuste servos
 ```
 
 ---

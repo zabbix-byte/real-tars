@@ -39,17 +39,19 @@ TARS has a **two-tier brain**: the local hardware (ESP32-S3) and cloud intellige
 
 ```mermaid
 graph TB
-    subgraph CLOUD["☁️ CLOUD / LOCAL SERVER"]
-        OC["🦞 OpenClaw<br/>AI Robotics Framework<br/>• Parses commands<br/>• Manages skills<br/>• Orchestrates actions"]
-        CL["🧠 Anthropic Claude API<br/>LLM - reasoning,<br/>conversation,<br/>decision-making"]
-        OC <-->|"Queries & Responses"| CL
+    subgraph CLOUD["CLOUD - LOCAL SERVER"]
+        OC["OpenClaw - AI Robotics Framework"]
+        CL["Anthropic Claude API - LLM"]
+        OC -->|"Queries"| CL
+        CL -->|"Responses"| OC
     end
 
-    subgraph ROBOT["🤖 TARS ROBOT (Physical)"]
-        ESP["📟 XIAO ESP32-S3 Sense<br/>• Executes movement commands (servos)<br/>• Reads sensors (VL53L0X, mic, camera)<br/>• Plays audio (I2S → MAX98357)<br/>• Shows expressions (OLED)<br/>• Sends sensor data to OpenClaw"]
+    subgraph ROBOT["TARS ROBOT - Physical"]
+        ESP["XIAO ESP32-S3 Sense"]
     end
 
-    OC <-->|"WiFi<br/>WebSocket / HTTP / MQTT"| ESP
+    OC -->|"WiFi - WebSocket"| ESP
+    ESP -->|"Sensor Data"| OC
 ```
 
 ### Why This Architecture?
@@ -269,11 +271,11 @@ void loop() {
 ```mermaid
 graph LR
     subgraph ESP["XIAO ESP32-S3 Sense"]
-        I2C["I2C (SDA/SCL)"]
-        I2S["I2S (BCLK/LRCLK/DIN)"]
-        PWM["PWM (GPIO)"]
-        BAT["Battery (JST)"]
-        CAM["Camera + Microphone<br/>(integrated)"]
+        I2C["I2C SDA/SCL"]
+        I2S["I2S BCLK/LRCLK/DIN"]
+        PWM["PWM GPIO"]
+        BAT["Battery JST"]
+        CAM["Camera + Microphone"]
     end
 
     I2C --> VL["VL53L0X Sensor"]
@@ -381,15 +383,15 @@ TARS from Interstellar has articulated panels that rotate and fold. The servos w
 ```mermaid
 graph LR
     subgraph SERVO["EMAX Servos"]
-        S1_SIG["Signal (orange) - Servo 1"]
-        S2_SIG["Signal (orange) - Servo 2"]
-        S_VCC["VCC (red)"]
-        S_GND["GND (brown)"]
+        S1_SIG["Signal orange - Servo 1"]
+        S2_SIG["Signal orange - Servo 2"]
+        S_VCC["VCC red"]
+        S_GND["GND brown"]
     end
 
     subgraph ESP32["ESP32-S3"]
-        E_G7["GPIO7 (PWM)"]
-        E_G8["GPIO8 (PWM)"]
+        E_G7["GPIO7 PWM"]
+        E_G8["GPIO8 PWM"]
     end
 
     STEP["DC-DC Step-Up 5V"]
@@ -433,17 +435,17 @@ graph LR
         A_BCLK["BCLK"]
         A_LRC["LRC"]
         A_DIN["DIN"]
-        A_OUT["+/- Output"]
+        A_OUT["Output +/-"]
     end
 
     subgraph ESP32["ESP32-S3"]
-        E_G1["GPIO1 (I2S Clock)"]
-        E_G2["GPIO2 (I2S Word Select)"]
-        E_G3["GPIO3 (I2S Data)"]
+        E_G1["GPIO1 I2S Clock"]
+        E_G2["GPIO2 I2S Word Select"]
+        E_G3["GPIO3 I2S Data"]
     end
 
     STEP["Step-Up 5V"]
-    SPK["🔊 Speaker 3W 8Ω"]
+    SPK["Speaker 3W 8 Ohm"]
 
     A_VIN --- STEP
     A_BCLK --- E_G1
@@ -471,14 +473,14 @@ graph LR
 
 ```mermaid
 graph TD
-    BATT["🔋 LiPo Battery 3.7V 3000mAh"]
+    BATT["LiPo Battery 3.7V 3000mAh"]
 
-    BATT -->|"Direct"| ESP["📟 XIAO ESP32-S3<br/>(built-in battery connector)<br/>Internal regulator → 3.3V<br/>for ESP32, sensors, OLED"]
+    BATT -->|"Direct"| ESP["XIAO ESP32-S3 - 3.3V regulator"]
 
-    BATT -->|"Input"| STEP["⚡ DC-DC Step-Up<br/>3.7V → 5V"]
+    BATT -->|"Input"| STEP["DC-DC Step-Up 3.7V to 5V"]
 
-    STEP --> SERVOS["⚙️ EMAX Servos (5V)"]
-    STEP --> AMP["🔊 MAX98357 Amplifier (5V)"]
+    STEP --> SERVOS["EMAX Servos 5V"]
+    STEP --> AMP["MAX98357 Amplifier 5V"]
 ```
 
 ### Estimated Battery Life
@@ -531,24 +533,24 @@ Once everything works on breadboard:
 ```mermaid
 graph TB
     subgraph ESP["XIAO ESP32-S3 Sense"]
-        CAM["📷 Camera OV2640"]
-        MIC["🎤 Microphone PDM"]
-        SDA["GPIO5 (SDA)"]
-        SCL["GPIO6 (SCL)"]
-        BCLK["GPIO1 (BCLK)"]
-        LRC["GPIO2 (LRC)"]
-        DIN["GPIO3 (DIN)"]
-        PWM1["GPIO7 (PWM)"]
-        PWM2["GPIO8 (PWM)"]
+        CAM["Camera OV2640"]
+        MIC["Microphone PDM"]
+        SDA["GPIO5 SDA"]
+        SCL["GPIO6 SCL"]
+        BCLK["GPIO1 BCLK"]
+        LRC["GPIO2 LRC"]
+        DIN["GPIO3 DIN"]
+        PWM1["GPIO7 PWM"]
+        PWM2["GPIO8 PWM"]
         BATC["BAT connector"]
     end
 
-    VL["👁️ VL53L0X"]
-    OLED["🖥️ OLED 2.42&quot;"]
-    AMP["🔊 MAX98357"]
-    SRV1["⚙️ Servo 1"]
-    SRV2["⚙️ Servo 2"]
-    BATT["🔋 LiPo 3.7V 3000mAh"]
+    VL["VL53L0X"]
+    OLED["OLED 2.42 inch"]
+    AMP["MAX98357"]
+    SRV1["Servo 1"]
+    SRV2["Servo 2"]
+    BATT["LiPo 3.7V 3000mAh"]
 
     SDA -->|"I2C"| VL
     SDA -->|"I2C"| OLED
@@ -561,7 +563,7 @@ graph TB
     PWM2 --> SRV2
     BATC --> BATT
 
-    subgraph POWER["⚡ DC-DC Step-Up 3.7V → 5V"]
+    subgraph POWER["DC-DC Step-Up 3.7V to 5V"]
         P5V["5V Output"]
     end
 
@@ -653,20 +655,20 @@ graph TB
 ```mermaid
 sequenceDiagram
     actor User
-    participant MIC as 🎤 Microphone (ESP32)
-    participant ESP as 📟 ESP32-S3
-    participant OC as 🦞 OpenClaw
-    participant CL as 🧠 Claude API
-    participant HW as ⚙️ Hardware<br/>(Servos/OLED/Speaker)
+    participant MIC as Microphone ESP32
+    participant ESP as ESP32-S3
+    participant OC as OpenClaw
+    participant CL as Claude API
+    participant HW as Hardware
 
-    User->>MIC: "TARS, what's in front of you?"
-    MIC->>ESP: Capture audio (PDM)
+    User->>MIC: TARS, what is in front of you?
+    MIC->>ESP: Capture audio PDM
     ESP->>OC: Send audio via WiFi
-    OC->>OC: Speech-to-Text (STT)
-    OC->>CL: System prompt (TARS personality, humor 75%)<br/>+ Sensor data (distance: 1.2m)<br/>+ User text
-    CL->>OC: "There's something 1.2 meters away.<br/>Looks like a wall. I wouldn't recommend<br/>moving forward, unless you want me<br/>to practice my accordion impression."
-    OC->>ESP: cmd: "speak" (play audio)<br/>cmd: "display" (expression: thinking → talking)<br/>cmd: "move" (turn slightly toward user)
-    ESP->>HW: MAX98357 plays voice<br/>OLED shows animation<br/>Servos adjust position
+    OC->>OC: Speech-to-Text STT
+    OC->>CL: System prompt + Sensor data + User text
+    CL->>OC: Response with personality and humor
+    OC->>ESP: cmd speak + cmd display + cmd move
+    ESP->>HW: Play voice + Show animation + Move servos
 ```
 
 ---

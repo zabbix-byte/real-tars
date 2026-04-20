@@ -37,32 +37,21 @@ TARS tiene un cerebro de **dos niveles**: el hardware local (ESP32-S3) y la inte
 
 ### Arquitectura del cerebro
 
-```
-┌──────────────────────────────────────────────────────────┐
-│                    NUBE / SERVIDOR LOCAL                  │
-│                                                          │
-│  ┌─────────────────────┐    ┌──────────────────────────┐ │
-│  │     OpenClaw         │    │   API Anthropic Claude   │ │
-│  │  (Framework IA       │◄──►│   (LLM - razonamiento,  │ │
-│  │   robótica)          │    │    conversación,         │ │
-│  │                      │    │    toma de decisiones)   │ │
-│  │  • Parsea comandos   │    └──────────────────────────┘ │
-│  │  • Gestiona skills   │                                 │
-│  │  • Orquesta acciones │                                 │
-│  └──────────┬──────────┘                                  │
-│             │ WebSocket / HTTP / MQTT                     │
-└─────────────┼────────────────────────────────────────────┘
-              │ WiFi
-              ▼
-┌──────────────────────────────────────────────────────────┐
-│              XIAO ESP32-S3 Sense (en el robot)           │
-│                                                          │
-│  • Ejecuta comandos de movimiento (servos)               │
-│  • Lee sensores (VL53L0X, micrófono, cámara)             │
-│  • Reproduce audio (I2S → MAX98357)                      │
-│  • Muestra expresiones (OLED)                            │
-│  • Envía datos de sensores a OpenClaw                    │
-└──────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph CLOUD["NUBE - SERVIDOR LOCAL"]
+        OC["OpenClaw - Framework IA Robotica"]
+        CL["Anthropic Claude API - LLM"]
+        OC -->|"Consultas"| CL
+        CL -->|"Respuestas"| OC
+    end
+
+    subgraph ROBOT["TARS ROBOT - Fisico"]
+        ESP["XIAO ESP32-S3 Sense"]
+    end
+
+    OC -->|"WiFi - WebSocket"| ESP
+    ESP -->|"Datos de sensores"| OC
 ```
 
 ### ¿Por qué esta arquitectura?
@@ -278,13 +267,22 @@ void loop() {
 ```
 
 #### Conexiones de hardware
-```
-XIAO ESP32-S3 Sense
-├── I2C (SDA/SCL) → Sensor VL53L0X, Pantalla OLED
-├── I2S (BCLK/LRCLK/DIN) → Amplificador MAX98357
-├── PWM (GPIO) → Servos EMAX
-├── Batería (JST) → LiPo 3000mAh
-└── Cámara + Micrófono (integrados)
+
+```mermaid
+graph LR
+    subgraph ESP["XIAO ESP32-S3 Sense"]
+        I2C["I2C SDA/SCL"]
+        I2S["I2S BCLK/LRCLK/DIN"]
+        PWM["PWM GPIO"]
+        BAT["Bateria JST"]
+        CAM["Camara + Microfono"]
+    end
+
+    I2C --> VL["Sensor VL53L0X"]
+    I2C --> OLED["Pantalla OLED"]
+    I2S --> AMP["Amplificador MAX98357"]
+    PWM --> S1["Servos EMAX"]
+    BAT --> LIPO["LiPo 3000mAh"]
 ```
 
 ---
@@ -307,12 +305,27 @@ Sensor láser ToF (Time of Flight) que mide distancia con precisión milimétric
 - **Interacción:** Detectar si alguien se acerca (activar saludo, respuesta)
 
 ### Conexión al ESP32-S3
-```
-VL53L0X/L1X       ESP32-S3
-  VCC  ──────────  3.3V
-  GND  ──────────  GND
-  SDA  ──────────  GPIO5 (SDA)
-  SCL  ──────────  GPIO6 (SCL)
+
+```mermaid
+graph LR
+    subgraph VL53["VL53L0X/L1X"]
+        V_VCC["VCC"]
+        V_GND["GND"]
+        V_SDA["SDA"]
+        V_SCL["SCL"]
+    end
+
+    subgraph ESP32["ESP32-S3"]
+        E_3V["3.3V"]
+        E_GND["GND"]
+        E_SDA["GPIO5 SDA"]
+        E_SCL["GPIO6 SCL"]
+    end
+
+    V_VCC --- E_3V
+    V_GND --- E_GND
+    V_SDA --- E_SDA
+    V_SCL --- E_SCL
 ```
 
 ### Paso a paso
@@ -335,13 +348,8 @@ Pantalla OLED de 2.42 pulgadas con resolución 128×64 píxeles. Soporta I2C y S
 - **Mensajes:** Mostrar texto como "Humor: 75%", "Siguiendo..."
 
 ### Conexión (modo I2C — comparte bus con VL53L0X)
-```
-OLED 2.42"         ESP32-S3
-  VCC  ──────────  3.3V
-  GND  ──────────  GND
-  SDA  ──────────  GPIO5 (SDA)  ← mismo bus I2C
-  SCL  ──────────  GPIO6 (SCL)  ← mismo bus I2C
-```
+
+> El OLED comparte el mismo bus I2C que el VL53L0X (GPIO5/GPIO6). Dirección I2C del OLED: `0x3C`.
 
 > **Nota:** La dirección I2C típica del OLED es `0x3C`, diferente al sensor (`0x29`), así que pueden compartir el mismo bus sin conflicto.
 
@@ -373,12 +381,27 @@ TARS de Interstellar tiene paneles articulados que rotan y se pliegan. Los servo
 - **Escaneo:** Rotar el sensor de distancia para cubrir más ángulo
 
 ### Conexión
-```
-Servo EMAX          ESP32-S3
-  Signal (naranja) ── GPIO7 (PWM)   ← Servo 1
-  Signal (naranja) ── GPIO8 (PWM)   ← Servo 2
-  VCC (rojo)  ─────── 5V (desde Step-Up)
-  GND (marrón) ────── GND
+
+```mermaid
+graph LR
+    subgraph SERVO["Servos EMAX"]
+        S1_SIG["Signal naranja - Servo 1"]
+        S2_SIG["Signal naranja - Servo 2"]
+        S_VCC["VCC rojo"]
+        S_GND["GND marron"]
+    end
+
+    subgraph ESP32["ESP32-S3"]
+        E_G7["GPIO7 PWM"]
+        E_G8["GPIO8 PWM"]
+    end
+
+    STEP["DC-DC Step-Up 5V"]
+
+    S1_SIG --- E_G7
+    S2_SIG --- E_G8
+    S_VCC --- STEP
+    S_GND --- ESP32
 ```
 
 > **⚠️ Importante:** Los servos necesitan 5V y pueden consumir picos de corriente. Alimentarlos directamente desde el ESP32 puede causar resets. Usar el módulo DC-DC Step-Up.
@@ -405,16 +428,32 @@ Sistema de audio digital compuesto por:
 - **Personalidad:** El humor característico de TARS se expresa con voz
 
 ### Conexión
-```
-MAX98357            ESP32-S3
-  VIN  ──────────  5V (desde Step-Up)
-  GND  ──────────  GND
-  BCLK ──────────  GPIO1 (I2S Clock)
-  LRC  ──────────  GPIO2 (I2S Word Select)
-  DIN  ──────────  GPIO3 (I2S Data)
 
-MAX98357
-  + ──── Altavoz 3W 8Ω ──── -
+```mermaid
+graph LR
+    subgraph AMP["MAX98357"]
+        A_VIN["VIN"]
+        A_GND["GND"]
+        A_BCLK["BCLK"]
+        A_LRC["LRC"]
+        A_DIN["DIN"]
+        A_OUT["Output +/-"]
+    end
+
+    subgraph ESP32["ESP32-S3"]
+        E_G1["GPIO1 I2S Clock"]
+        E_G2["GPIO2 I2S Word Select"]
+        E_G3["GPIO3 I2S Data"]
+    end
+
+    STEP["Step-Up 5V"]
+    SPK["Altavoz 3W 8 Ohm"]
+
+    A_VIN --- STEP
+    A_BCLK --- E_G1
+    A_LRC --- E_G2
+    A_DIN --- E_G3
+    A_OUT --- SPK
 ```
 
 ### Paso a paso
@@ -433,15 +472,17 @@ MAX98357
 - **DC-DC Boost Step-Up** — Convierte 3.7V a 5V para servos, amplificador, etc.
 
 ### Arquitectura de alimentación
-```
-Batería LiPo 3.7V 3000mAh
-│
-├──→ XIAO ESP32-S3 (conector batería integrado)
-│    └── Regulador interno → 3.3V para ESP32, sensores, OLED
-│
-└──→ DC-DC Step-Up (3.7V → 5V)
-     ├── Servos EMAX (5V)
-     └── MAX98357 Amplificador (5V)
+
+```mermaid
+graph TD
+    BATT["Bateria LiPo 3.7V 3000mAh"]
+
+    BATT -->|"Directo"| ESP["XIAO ESP32-S3 - Regulador 3.3V"]
+
+    BATT -->|"Entrada"| STEP["DC-DC Step-Up 3.7V a 5V"]
+
+    STEP --> SERVOS["Servos EMAX 5V"]
+    STEP --> AMP["MAX98357 Amplificador 5V"]
 ```
 
 ### Autonomía estimada
@@ -491,34 +532,47 @@ Una vez que todo funcione en breadboard:
 
 ## 🗺️ Paso 8 — Mapa de Conexiones Completo
 
-```
-                    ┌─────────────────────────────┐
-                    │    XIAO ESP32-S3 Sense       │
-                    │  ┌───────┐  ┌──────────┐     │
-                    │  │Cámara │  │Micrófono │     │
-                    │  │OV2640 │  │PDM       │     │
-                    │  └───────┘  └──────────┘     │
-                    │                               │
-                    │  GPIO5 (SDA) ──┬── VL53L0X   │
-                    │  GPIO6 (SCL) ──┤── OLED      │
-                    │                │   (Bus I2C)  │
-                    │                               │
-                    │  GPIO1 (BCLK)─── MAX98357     │
-                    │  GPIO2 (LRC) ─── (I2S Bus)   │
-                    │  GPIO3 (DIN) ───┘             │
-                    │                               │
-                    │  GPIO7 (PWM) ─── Servo 1     │
-                    │  GPIO8 (PWM) ─── Servo 2     │
-                    │                               │
-                    │  BAT ── LiPo 3.7V 3000mAh   │
-                    └─────────────────────────────┘
-                              │
-                    ┌─────────┴──────────┐
-                    │  DC-DC Step-Up     │
-                    │  3.7V → 5V         │
-                    │  ├── Servos (5V)   │
-                    │  └── MAX98357 (5V) │
-                    └────────────────────┘
+```mermaid
+graph TB
+    subgraph ESP["XIAO ESP32-S3 Sense"]
+        CAM["Camara OV2640"]
+        MIC["Microfono PDM"]
+        SDA["GPIO5 SDA"]
+        SCL["GPIO6 SCL"]
+        BCLK["GPIO1 BCLK"]
+        LRC["GPIO2 LRC"]
+        DIN["GPIO3 DIN"]
+        PWM1["GPIO7 PWM"]
+        PWM2["GPIO8 PWM"]
+        BATC["BAT conector"]
+    end
+
+    VL["VL53L0X"]
+    OLED["OLED 2.42 pulgadas"]
+    AMP["MAX98357"]
+    SRV1["Servo 1"]
+    SRV2["Servo 2"]
+    BATT["LiPo 3.7V 3000mAh"]
+
+    SDA -->|"I2C"| VL
+    SDA -->|"I2C"| OLED
+    SCL -->|"I2C"| VL
+    SCL -->|"I2C"| OLED
+    BCLK -->|"I2S"| AMP
+    LRC -->|"I2S"| AMP
+    DIN -->|"I2S"| AMP
+    PWM1 --> SRV1
+    PWM2 --> SRV2
+    BATC --> BATT
+
+    subgraph POWER["DC-DC Step-Up 3.7V a 5V"]
+        P5V["Salida 5V"]
+    end
+
+    BATT --> POWER
+    P5V -->|"5V"| SRV1
+    P5V -->|"5V"| SRV2
+    P5V -->|"5V"| AMP
 ```
 
 ---
@@ -602,34 +656,23 @@ Una vez que todo funcione en breadboard:
 
 ## 🌐 Paso 11 — Flujo Completo de una Interacción
 
-```
-1. Tú dices: "TARS, ¿qué hay delante de ti?"
-         │
-2. Micrófono PDM (ESP32) capta el audio
-         │
-3. ESP32 envía audio por WiFi → OpenClaw
-         │
-4. OpenClaw convierte voz a texto (STT)
-         │
-5. OpenClaw envía a Claude:
-   - System prompt (personalidad TARS, humor 75%)
-   - Datos de sensores (distancia: 1.2m, objeto detectado)
-   - Texto del usuario: "¿qué hay delante de ti?"
-         │
-6. Claude responde:
-   "Hay algo a 1.2 metros. Parece una pared.
-    No recomiendo avanzar, a menos que quieras
-    que practique mi impresión de acordeón."
-         │
-7. OpenClaw traduce la respuesta:
-   - Comando "speak": reproducir el texto como audio
-   - Comando "display": mostrar expresión "pensando" → "hablando"
-   - Comando "move": girar ligeramente hacia el usuario
-         │
-8. ESP32 ejecuta:
-   - MAX98357 reproduce la voz
-   - OLED muestra animación
-   - Servos ajustan posición
+```mermaid
+sequenceDiagram
+    actor Usuario
+    participant MIC as Microfono ESP32
+    participant ESP as ESP32-S3
+    participant OC as OpenClaw
+    participant CL as Claude API
+    participant HW as Hardware
+
+    Usuario->>MIC: TARS, que hay delante de ti?
+    MIC->>ESP: Captar audio PDM
+    ESP->>OC: Enviar audio por WiFi
+    OC->>OC: Speech-to-Text STT
+    OC->>CL: System prompt + Datos sensores + Texto usuario
+    CL->>OC: Respuesta con personalidad y humor
+    OC->>ESP: cmd speak + cmd display + cmd move
+    ESP->>HW: Reproduce voz + Muestra animacion + Mueve servos
 ```
 
 ---
