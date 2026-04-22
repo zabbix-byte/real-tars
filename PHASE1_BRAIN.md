@@ -410,39 +410,50 @@ sequenceDiagram
 
 ## Phase 1 Checklist
 
+> **Estado real (actualizado):** firmware propio en Arduino IDE (no OpenClaw), salida por **Telegram** (no WhatsApp/CallMeBot), idioma **solo espanol** (rumano descartado por baja calidad de Whisper), TTS aun no implementado. Anadidos extra: **Mem0** (memoria a largo plazo), **wake word "tars"** con tolerancia a variantes, **preroll buffer 500 ms** y **vision Llama 4 Maverick**.
+
 ### Hardware
-- [ ] XIAO ESP32-S3 Sense purchased and received
-- [ ] Soldering kit ready
-- [ ] Pin headers soldered to expansion board
-- [ ] Camera ribbon cable connected
-- [ ] Board recognized via USB-C
+- [x] XIAO ESP32-S3 Sense purchased and received
+- [x] Soldering kit ready
+- [x] Pin headers soldered to expansion board
+- [x] Camera ribbon cable connected
+- [x] Board recognized via USB-C
 
 ### Software
-- [ ] Arduino IDE / PlatformIO installed with ESP32-S3 support
-- [ ] OpenClaw repository cloned
-- [ ] Python 3.10+ installed
+- [x] Arduino IDE / PlatformIO installed with ESP32-S3 support
+- [ ] ~~OpenClaw repository cloned~~ *(no se usa: firmware propio en `tars/`)*
+- [ ] ~~Python 3.10+ installed~~ *(no necesario, todo Arduino C++)*
 
 ### API Keys
-- [ ] Groq API key obtained (console.groq.com)
-- [ ] OpenAI API key obtained (platform.openai.com)
-- [ ] CallMeBot WhatsApp API key obtained
+- [x] Groq API key obtained (console.groq.com)
+- [ ] ~~OpenAI API key obtained~~ *(TTS pendiente, ver Fase siguiente)*
+- [ ] ~~CallMeBot WhatsApp API key~~ *(reemplazado por Telegram Bot)*
+- [x] Telegram Bot token + chat_id (BotFather)
+- [x] Mem0 API key (app.mem0.ai)
 
 ### Configuration
-- [ ] config.json filled with all API keys
-- [ ] WiFi credentials configured
-- [ ] TARS system prompt customized
-- [ ] Humor level set (default: 75%)
-- [ ] Languages set to ["es", "ro"]
-- [ ] SEND_MESSAGE_WHATSAPP set to true
+- [x] config.h filled with all API keys
+- [x] WiFi credentials configured
+- [x] TARS system prompt customized (curioso/ironico, 75% humor)
+- [x] Humor level set (default: 75%)
+- [ ] ~~Languages set to ["es", "ro"]~~ *(solo "es", rumano descartado)*
+- [ ] ~~SEND_MESSAGE_WHATSAPP set to true~~ *(reemplazado: `SEND_MESSAGE_TELEGRAM=true`)*
+- [x] Wake word configurada (`WAKE_WORDS="tars,lars,tarz,..."`)
+- [x] Vision triggers configurados (`VISION_TRIGGERS="mira,ves,..."`)
+- [x] Mem0 user_id + recall limit
 
 ### Validation
-- [ ] Groq STT works (speak and get text)
-- [ ] Groq LLM responds in character as TARS
-- [ ] OpenAI TTS generates audio with Onyx voice
-- [ ] WhatsApp message received on phone
-- [ ] Spanish response works
-- [ ] Romanian response works
-- [ ] Camera vision analysis works
+- [x] Groq STT works (speak and get text)
+- [x] Groq LLM responds in character as TARS
+- [ ] OpenAI TTS generates audio with Onyx voice *(pendiente, requiere bocina I2S)*
+- [ ] ~~WhatsApp message received on phone~~ *(via Telegram en su lugar)*
+- [x] Telegram message received on phone
+- [x] Spanish response works
+- [ ] ~~Romanian response works~~ *(idioma retirado)*
+- [x] Camera vision analysis works (Llama 4 Maverick)
+- [x] Memoria persistente funciona (Mem0 recall + remember)
+- [x] Wake word filtra conversaciones ajenas
+- [x] Preroll buffer evita corte del inicio de la frase
 
 ---
 

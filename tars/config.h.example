@@ -1,0 +1,60 @@
+#pragma once
+
+// =============================================================
+// TARS - Configuration template
+// Copy this file to "config.h" (same folder) and fill in your creds.
+// NEVER commit config.h with real keys.
+// =============================================================
+
+// ---------- WiFi (solo 2.4 GHz) ----------
+#define WIFI_SSID        "YOUR_WIFI_NETWORK"
+#define WIFI_PASSWORD    "YOUR_WIFI_PASSWORD"
+
+// ---------- Groq (console.groq.com) ----------
+#define GROQ_API_KEY     "gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+#define GROQ_STT_MODEL   "whisper-large-v3-turbo"
+#define GROQ_LLM_MODEL   "llama-3.1-8b-instant"
+
+// ---------- Telegram Bot ----------
+// 1. Telegram -> @BotFather -> /newbot -> copia el TOKEN.
+// 2. Manda /start a tu nuevo bot.
+// 3. https://api.telegram.org/bot<TOKEN>/getUpdates -> copia chat.id.
+#define TELEGRAM_BOT_TOKEN  "1234567890:AAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+#define TELEGRAM_CHAT_ID    "123456789"
+
+// ---------- Memoria a largo plazo (Mem0) ----------
+// 1. https://app.mem0.ai -> Settings -> API Keys -> copia la key ("m0-...")
+// 2. MEM0_USER_ID es tu nombre/alias. Mem0 separa memorias por user_id.
+#define MEM0_API_KEY     "m0-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+#define MEM0_USER_ID     "yo"
+#define MEM0_ENABLED     true
+#define MEM0_RECALL_LIMIT 5
+
+// ---------- Vision ----------
+#define VISION_ENABLED    true
+#define GROQ_VISION_MODEL "meta-llama/llama-4-maverick-17b-128e-instruct"
+#define VISION_TRIGGERS   "mira,ves,vez,que ves,fijate,observa,describe,mirar,foto,camara"
+
+// ---------- TARS identity ----------
+#define TARS_HUMOR_LEVEL 75
+#define TARS_SYSTEM_PROMPT \
+    "Eres TARS, un robot militar rectangular inspirado en la pelicula Interstellar. " \
+    "Tu nivel de humor es del 75 por ciento. Eres directo, sarcastico y brutalmente honesto. " \
+    "Hablas siempre en espanol, de forma natural y cercana. " \
+    "Tus respuestas son muy cortas (maximo 2 frases), secas y con humor sarcastico militar. " \
+    "Nunca rompes el personaje. Nunca uses emojis. Nunca expliques que eres una IA."
+
+// ---------- Audio capture ----------
+#define SAMPLE_RATE        16000
+#define RECORD_SECONDS     5
+#define VAD_THRESHOLD      1500
+#define SILENCE_TIMEOUT_MS 1200
+
+// ---------- Behaviour ----------
+#define SEND_MESSAGE_TELEGRAM  true
+#define HTTP_TIMEOUT_MS        30000
+
+// ---------- Wake word ----------
+// Whisper a veces escribe "Lars" o "Tarz" en vez de "tars". Aceptamos varias.
+#define WAKE_WORDS         "tars,lars,tarz,tarss,tas"
+#define REQUIRE_WAKE_WORD  true

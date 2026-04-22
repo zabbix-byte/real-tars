@@ -1,0 +1,22 @@
+# Secrets - NEVER commit real API keys
+**/config.h
+
+# Arduino IDE build artifacts
+build/
+*.elf
+*.bin
+*.hex
+*.map
+
+# PlatformIO
+.pio/
+.pioenvs/
+.piolibdeps/
+
+# Editors
+.vscode/
+.idea/
+
+# OS junk
+Thumbs.db
+.DS_Store
