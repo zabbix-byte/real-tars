@@ -5,7 +5,78 @@
 
 ---
 
-## 🧱 Componentes y dimensiones reales
+## � Aspecto del robot (vista frontal a escala)
+
+```
+       ┌───┐ ┌───────┐ ┌───┐          ── 351 mm
+       │   │ │░░░░░░░│ │   │   ← OLED 2.42" (z 295–340)
+       │   │ │░░░░░░░│ │   │
+       │   │ ├───────┤ │   │
+       │   │ │  ▓▓▓  │ │   │   ← Servos A/B (z 225–295)
+       │   │ │  ▓▓▓  │ │   │
+       │   │ │ •   • │ │   │   ← ToF VL53L1X (z 200–225)
+       │   │ │   ◉   │ │   │   ← Cámara OV2640 (z 170–200)
+       │   │ │ ╱╲╱╲╱ │ │   │   ← Rejilla altavoz ø40 (z 125–170)
+       │   │ │ ═════ │ │   │   ← MT3608 + switch (z 110–125)
+       │   │ │▓▓▓▓▓▓▓│ │   │
+       │   │ │▓ BAT ▓│ │   │   ← Batería HXJN 4200 mAh
+       │   │ │▓▓▓▓▓▓▓│ │   │     (z 10–100, 90 mm alto)
+       │   │ │▓▓▓▓▓▓▓│ │   │
+       │ ▪ │ │   ▪   │ │ ▪ │   ← Pies (4)
+       └───┘ └───────┘ └───┘          ── 0 mm
+       ◄39►  ◄── 78 ──►  ◄39►
+       ◄─────── 156 mm ───────►
+```
+
+**Brazo izdo · Central doble · Brazo dcho** — los dos brazos oscilan ±60° sobre sus servos en la parte superior, como el TARS canónico de la película.
+
+### Vista 3D esquemática (silueta + caras visibles)
+
+```mermaid
+flowchart TB
+    subgraph FRONT["🔸 Cara frontal"]
+        direction TB
+        F1["█ OLED 2.42  128×64 █"]
+        F2["[ servo hornsvisible ]"]
+        F3["• ToF1    • ToF2"]
+        F4["     ◉ cámara"]
+        F5["▒▒ rejilla altavoz ▒▒"]
+        F6["═ switch + LED pwr ═"]
+        F1 --> F2 --> F3 --> F4 --> F5 --> F6
+    end
+    subgraph SIDE["🔹 Cara lateral (39 mm)"]
+        direction TB
+        S1["tapa"]
+        S2["OLED"]
+        S3["servo"]
+        S4["XIAO"]
+        S5["altavoz"]
+        S6["batería"]
+        S7["base"]
+        S1-->S2-->S3-->S4-->S5-->S6-->S7
+    end
+    FRONT -.-> SIDE
+```
+
+### Vista en planta (desde arriba — 4 bloques verticales)
+
+```
+      frontal
+    ┌─────────────────────────────┐
+    │ ┌──┐ ┌──────┐ ┌──┐          │ ← 39 mm fondo
+    │ │BI│ │CENTRL│ │BD│          │
+    │ │  │ │ (2u) │ │  │          │
+    │ └──┘ └──────┘ └──┘          │
+    └─────────────────────────────┘
+      39 + 78 + 39 = 156 mm
+      trasera (canal cables 5mm)
+```
+
+> Los **4 bloques paralelos** (2 brazos de 1 u + central de 2 u) son la firma visual de TARS: un "robot-librero" rectangular que camina balanceando sus secciones.
+
+---
+
+## �🧱 Componentes y dimensiones reales
 
 | Componente                      | Dimensiones (mm)        | Nota                              |
 | ------------------------------- | ----------------------- | --------------------------------- |
