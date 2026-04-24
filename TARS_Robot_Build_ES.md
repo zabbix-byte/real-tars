@@ -6,6 +6,21 @@
 
 ---
 
+> ⚠️ **AVISO DE VIGENCIA (lee antes de seguir):**
+> Este documento es una **traducción legacy** escrita cuando el diseño usaba `VL53L0X` único, batería `LiPo 3000 mAh` con `JST PHR-02`, `MAX98357` (sin la A), bloques impresos de 20 cm en `ASA/PLA` y pinout `GPIO 1/2/3` para I²S + `GPIO 7/8` para servos.
+> 
+> **La especificación CANÓNICA actual es diferente.** Fuentes de verdad (en inglés):
+> - [README.md](README.md) — resumen global actualizado
+> - [PHASE1_BRAIN.md](PHASE1_BRAIN.md) — XIAO ESP32-S3 Sense + cloud
+> - [PHASE2_SENSES.md](PHASE2_SENSES.md) — **2× VL53L1X** (XSHUT en GPIO 2/3, direcciones 0x30/0x31) + **MAX98357A** (I²S en GPIO 7/8/9) + altavoz ø40 mm
+> - [PHASE3_MUSCLES.md](PHASE3_MUSCLES.md) — **HXJN LiPo 4200 mAh 606090** (cables pelados + BMS) + **MT3608 Step-Up** + servos EMAX en **GPIO 43/44** + **OLED Waveshare 2.42" 128×64 SSD1309** en el bus I²C compartido (0x3C)
+> - [PHASE3_MECHANICS.md](PHASE3_MECHANICS.md) — **chasis PETG 351×156×39 mm** (no 80 cm, no ASA)
+> - [PHASE4_MONOLITH.md](PHASE4_MONOLITH.md) — integración final y firmware monolítico
+> 
+> Si algo de este archivo contradice los phase docs, **prevalecen los phase docs**. Esta traducción se conserva como referencia narrativa.
+
+---
+
 ## 📦 Lista de Componentes
 
 | # | Componente | Precio | Función principal |

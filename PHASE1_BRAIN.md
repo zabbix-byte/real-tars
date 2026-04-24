@@ -266,7 +266,7 @@ User said: {user_input}
 | Bluetooth | BLE 5.0 |
 | Camera | OV2640 (integrated on Sense board) |
 | Microphone | Digital PDM (integrated) |
-| Battery | JST connector with charging circuit |
+| Battery | BAT+/BAT- solder pads with onboard charging circuit (USB-C) |
 | Size | 21 x 17.8 mm |
 
 ### What Each Part Does in Phase 1

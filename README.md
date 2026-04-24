@@ -10,12 +10,13 @@
 ```mermaid
 graph TB
     subgraph HW["HARDWARE - XIAO ESP32-S3 Sense"]
-        MIC["PDM Microphone"]
-        CAM["OV2640 Camera"]
-        LIDAR["VL53L0X LiDAR"]
-        OLED["OLED 2.42 inch Display"]
-        SERVOS["EMAX Servos x2"]
-        SPK["Speakers + MAX98357 DAC"]
+        MIC["PDM Microphone (on-board)"]
+        CAM["OV2640 Camera (on-board)"]
+        LIDAR["2x VL53L1X ToF (front + 45deg)"]
+        OLED["OLED 2.42 inch SSD1309 128x64"]
+        SERVOS["2x EMAX ES08MD Servos"]
+        SPK["Speaker 3W 8ohm 40mm + MAX98357A"]
+        BATT["HXJN LiPo 4200mAh + MT3608 step-up"]
     end
 
     subgraph AI["INTELLIGENCE - Groq Cloud"]
@@ -50,9 +51,10 @@ The project is divided into 4 independent phases. Each phase builds on the previ
 | Phase | Name | Components | Result | Doc |
 |-------|------|-----------|--------|-----|
 | 1 | **Brain** | XIAO ESP32-S3 + Groq + Mobile | TARS te insulta por el movil en 2 idiomas | [PHASE1_BRAIN.md](PHASE1_BRAIN.md) |
-| 2 | **Senses** | LiDAR + Speaker + DAC | El robot te "oye" y "habla" fisicamente | [PHASE2_SENSES.md](PHASE2_SENSES.md) |
-| 3 | **Muscles** | Battery + Step-Up + Servos | Movimiento independiente y equilibrio | [PHASE3_MUSCLES.md](PHASE3_MUSCLES.md) |
-| 4 | **Monolith** | Bambu Lab P1S (ASA/PLA) | Ensamblaje final de los bloques de 20cm | [PHASE4_MONOLITH.md](PHASE4_MONOLITH.md) |
+| 2 | **Senses** | 2x VL53L1X + Speaker 40mm + MAX98357A | El robot te "oye", "habla" y mide distancias | [PHASE2_SENSES.md](PHASE2_SENSES.md) |
+| 3 | **Muscles** | HXJN 4200mAh + MT3608 + 2x ES08MD + OLED | Portable, con brazos oscilantes y pantalla | [PHASE3_MUSCLES.md](PHASE3_MUSCLES.md) |
+| 3b| **Mechanics** | Chasis PETG 351x156x39mm (Bambu X1/P1S) | Carcasa canonica 9x4x1 con todo integrado | [PHASE3_MECHANICS.md](PHASE3_MECHANICS.md) |
+| 4 | **Monolith** | Ensamblaje final + firmware unificado | Robot TARS completo funcionando | [PHASE4_MONOLITH.md](PHASE4_MONOLITH.md) |
 
 ```mermaid
 graph LR
@@ -67,17 +69,18 @@ graph LR
 
 | # | Component | Price | Phase |
 |---|-----------|-------|-------|
-| 1 | XIAO ESP32-S3 Sense (Camera + Mic + WiFi) | EUR 39.19 | 1 |
+| 1 | XIAO ESP32-S3 Sense (Camera + Mic + WiFi + 8MB PSRAM) | EUR 39.19 | 1 |
 | 2 | Soldering Kit 24-in-1 with Multimeter | EUR 24.69 | 1 |
-| 3 | VL53L0X / VL53L1X Laser Range Sensor | EUR 11.99 | 2 |
-| 4 | MAX98357 I2S DAC Amplifier 3W | EUR 9.99 | 2 |
-| 5 | Mini Speakers 3W 8 Ohm x4 (JST-PH2.0) | EUR 8.99 | 2 |
+| 3 | VL53L1X ToF Range Sensor (0-4m) x2 | EUR 23.98 | 2 |
+| 4 | MAX98357A I2S DAC Amplifier 3W | EUR 9.99 | 2 |
+| 5 | Speaker 3W 8 Ohm 40mm diameter | EUR 8.99 | 2 |
 | 6 | EMAX ES08MD Digital Servo x2 | EUR 25.49 | 3 |
-| 7 | DC-DC Boost Step-Up (3.7V to 5V) x10 | EUR 7.99 | 3 |
-| 8 | LiPo Battery 3.7V 3000mAh (JST PHR-02) | EUR 13.19 | 3 |
-| 9 | Waveshare 2.42 inch OLED 128x64 (I2C) | EUR 21.99 | 4 |
-| 10 | Breadboard 400+830 points + jumper wires | EUR 10.99 | 4 |
-| | **TOTAL hardware** | **~EUR 174.50** | |
+| 7 | MT3608 DC-DC Boost Step-Up (3.7V to 5V) | EUR 7.99 | 3 |
+| 8 | HXJN LiPo 4200mAh 606090 (bare wires, BMS) | EUR 22.99 | 3 |
+| 9 | Waveshare 2.42 inch OLED 128x64 SSD1309 (I2C/SPI) | EUR 21.99 | 3 |
+| 10 | Miuzei Starter Kit (breadboard + jumpers) | EUR 10.99 | 1-3 |
+| 11 | PETG filament (264g for full chassis) | EUR ~6.00 | 3b |
+| | **TOTAL hardware** | **~EUR 202.27** | |
 
 ### Cloud Services
 
@@ -96,9 +99,9 @@ graph LR
 | Phase | Hardware | Cumulative |
 |-------|----------|-----------|
 | Phase 1 - Brain | EUR 63.88 | EUR 63.88 |
-| Phase 2 - Senses | EUR 30.97 | EUR 94.85 |
-| Phase 3 - Muscles | EUR 46.67 | EUR 141.52 |
-| Phase 4 - Monolith | EUR 32.98 | EUR 174.50 |
+| Phase 2 - Senses | EUR 42.96 | EUR 106.84 |
+| Phase 3 - Muscles + Mechanics | EUR 95.44 | EUR 202.27 |
+| Phase 4 - Monolith (assembly only) | EUR 0.00 | EUR 202.27 |
 
 ---
 
@@ -127,22 +130,25 @@ sequenceDiagram
 
 | Spec | Value |
 |------|-------|
-| Height | ~80cm (4 x 20cm blocks) |
-| Weight | ~300-500g |
+| Height | 35.1 cm (9 units of 39mm, canonical 9x4x1 TARS) |
+| Width | 15.6 cm (2 lateral arms + central double) |
+| Depth | 3.9 cm |
+| Weight | ~534 g (full assembly) |
 | CPU | ESP32-S3 dual-core 240MHz, 8MB PSRAM |
 | AI Brain | Groq Llama 3.1 8B Instant (840 tok/s) |
 | STT | Groq Whisper Large v3 Turbo (< 100ms) |
 | Vision | Groq Llama 4 Scout |
 | Voice | OpenAI tts-1, Onyx |
-| Sensors | Camera, Microphone, LiDAR (0-4m) |
-| Display | OLED 2.42 inch 128x64 |
-| Audio | MAX98357 3W + 8 Ohm speakers |
-| Movement | 2x EMAX ES08MD (2.4 kg/cm) |
-| Battery | LiPo 3.7V 3000mAh (~3.5h) |
+| Sensors | Camera OV2640, Mic PDM, 2x VL53L1X ToF (0-4m) |
+| Display | Waveshare 2.42" OLED 128x64 (SSD1309, I2C 0x3C) |
+| Audio | MAX98357A + speaker 3W 8 Ohm 40mm (integrated acoustic box) |
+| Movement | 2x EMAX ES08MD (2.4 kg/cm, +/-60 deg) |
+| Battery | HXJN LiPo 3.7V 4200mAh with BMS (~10h active, ~33h idle) |
+| Power | MT3608 step-up 3.7V->5V (eta ~90%) |
 | Connectivity | WiFi 2.4GHz, WhatsApp, Telegram |
 | Languages | Spanish + Romanian |
 | Humor | 0-100% (default 75%) |
-| Body | ASA or PLA, Bambu Lab P1S |
+| Body | PETG, Bambu Lab X1 / P1S (~25h print, 264g filament) |
 
 ---
 

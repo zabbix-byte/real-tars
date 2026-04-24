@@ -1,13 +1,15 @@
 # Phase 3 — The Muscles
 
-> **Battery + Step-Up + Servos**
-> Movimiento independiente y equilibrio.
+> **Battery + MT3608 Step-Up + Servos + OLED + Chassis PETG**
+> Movimiento independiente, pantalla y carcasa final.
+
+> 📐 **Mecanica detallada:** toda la geometría del chasis (351 mm x 156 mm x 39 mm, apilamiento vertical, ventanas, plan de impresión) esta en [PHASE3_MECHANICS.md](PHASE3_MECHANICS.md). Este documento cubre la parte electronica y de firmware.
 
 ---
 
 ## Overview
 
-Phase 3 cuts the cord. TARS gains **independent power** via a LiPo battery, **voltage regulation** through DC-DC Step-Up converters, and **physical movement** with digital servo motors. After this phase, TARS can move, gesture, and run without being plugged into a computer.
+Phase 3 cuts the cord. TARS gains **independent power** via an HXJN LiPo 4200 mAh battery, **voltage regulation** through the MT3608 DC-DC Step-Up converter, **physical movement** with two EMAX ES08MD digital servos, a **2.42" OLED face** and its final **PETG chassis**. After this phase, TARS can move, gesture, display status, and run without being plugged into a computer.
 
 **End result:** A robot that hears, thinks, speaks, senses distance, moves its panels, and runs on battery — all wirelessly.
 
@@ -24,7 +26,7 @@ graph LR
     end
 
     subgraph PHASE3["Phase 3 - Mobile"]
-        P3_PWR["LiPo 3000mAh battery"]
+        P3_PWR["HXJN LiPo 4200mAh"]
         P3_MOV["2x EMAX servo motors"]
         P3_OUT["Speaker + WhatsApp + Movement"]
     end
@@ -36,12 +38,14 @@ graph LR
 
 | Capability | Phase 2 | Phase 3 |
 |------------|---------|---------|
-| Power source | USB-C cable | **LiPo 3.7V 3000mAh battery** |
-| Voltage regulation | None needed | **DC-DC Step-Up 3.7V to 5V** |
-| Movement | None | **2x EMAX ES08MD servos** |
+| Power source | USB-C cable | **HXJN LiPo 3.7V 4200mAh with BMS** |
+| Voltage regulation | None needed | **MT3608 DC-DC Step-Up 3.7V -> 5V** |
+| Movement | None | **2x EMAX ES08MD servos (PWM on GPIO 43/44)** |
+| Display | None | **Waveshare 2.42" OLED 128x64 (I2C, same bus as ToF)** |
 | Portable | No | **Yes, fully wireless** |
-| Runtime | Unlimited (USB) | **~3.5h intensive, ~8-10h idle** |
-| Gestures | None | **Panel rotation, head tilt, scanning** |
+| Runtime | Unlimited (USB) | **~6h intensive, ~10h active, ~33h idle** |
+| Gestures | None | **Arm oscillation +/-60 deg, scripted gesture library** |
+| Enclosure | Breadboard | **PETG chassis 351x156x39 mm (see PHASE3_MECHANICS.md)** |
 
 ---
 
@@ -50,36 +54,43 @@ graph LR
 ```mermaid
 graph TB
     subgraph POWER["POWER SYSTEM"]
-        BATT["LiPo 3.7V 3000mAh"]
-        STEP["DC-DC Step-Up 3.7V to 5V"]
+        BATT["HXJN LiPo 3.7V 4200mAh (BMS)"]
+        STEP["MT3608 DC-DC Step-Up 3.7V -> 5V"]
         BATT -->|"3.7V direct"| ESP
         BATT -->|"3.7V input"| STEP
     end
 
     subgraph ESP["XIAO ESP32-S3 Sense"]
         OC["OpenClaw Firmware"]
-        I2C["I2C Bus"]
+        I2C["I2C Bus (shared)"]
         I2S["I2S Bus"]
         PWM_OUT["PWM Outputs"]
-        BAT_MON["Battery Monitor ADC"]
+        BAT_MON["Battery Monitor ADC (GPIO1)"]
     end
 
     subgraph ACTUATORS["MOVEMENT"]
-        S1["Servo 1 - Panel A"]
-        S2["Servo 2 - Panel B"]
+        S1["Servo A - left arm (GPIO43)"]
+        S2["Servo B - right arm (GPIO44)"]
+    end
+
+    subgraph DISPLAY["DISPLAY"]
+        OLED["Waveshare 2.42 OLED 128x64 (SSD1309, 0x3C)"]
     end
 
     subgraph SENSORS["SENSORS - Phase 2"]
-        VL["VL53L0X"]
-        AMP["MAX98357 + Speaker"]
+        VL1["VL53L1X #1 0x30 (front)"]
+        VL2["VL53L1X #2 0x31 (45 deg)"]
+        AMP["MAX98357A + Speaker 40mm"]
     end
 
     STEP -->|"5V"| S1
     STEP -->|"5V"| S2
     STEP -->|"5V"| AMP
-    PWM_OUT -->|"GPIO7"| S1
-    PWM_OUT -->|"GPIO8"| S2
-    I2C --> VL
+    PWM_OUT -->|"GPIO43"| S1
+    PWM_OUT -->|"GPIO44"| S2
+    I2C --> VL1
+    I2C --> VL2
+    I2C --> OLED
     I2S --> AMP
 ```
 
@@ -89,40 +100,47 @@ graph TB
 
 | # | Component | Price | Function |
 |---|-----------|-------|----------|
-| 1 | EMAX ES08MD Digital Servo x2 | €25.49 | Panel movement, gestures |
-| 2 | DC-DC Boost Step-Up (3.7V to 5V/9V/12V) x10 | €7.99 | Voltage conversion for 5V devices |
-| 3 | LiPo Battery 3.7V 3000mAh (JST PHR-02) | €13.19 | Portable power source |
-| | **Phase 3 additions** | **€46.67** | |
-| | **Cumulative total (P1+P2+P3)** | **€141.52** | |
+| 1 | EMAX ES08MD Digital Servo x2 | €25.49 | Arm oscillation, gestures |
+| 2 | MT3608 DC-DC Boost Step-Up (3.7V to 5V) | €7.99 | Voltage conversion for 5V devices |
+| 3 | HXJN LiPo 3.7V 4200mAh 606090 (bare wires, BMS) | €22.99 | Portable power source |
+| 4 | Waveshare 2.42" OLED 128x64 SSD1309 (I2C/SPI) | €21.99 | Canonical TARS face display |
+| 5 | PETG filament (~264 g for full chassis) | €~6.00 | 3D-printed body |
+| | **Phase 3 additions** | **~€84.46** | |
+| | **Cumulative total (P1+P2+P3)** | **~€191.30** | |
 
 ---
 
-## LiPo Battery — 3.7V 3000mAh
+## LiPo Battery — HXJN 3.7V 4200mAh 606090
 
 ### Specifications
 
 | Spec | Value |
 |------|-------|
 | Voltage | 3.7V nominal (4.2V full, 3.0V cutoff) |
-| Capacity | 3000mAh |
-| Connector | JST PHR-02 (compatible with XIAO) |
+| Capacity | 4200 mAh |
+| Dimensions | 60 x 90 x 6 mm |
+| Weight | ~84 g |
+| Wires | Bare cables (red + / black -), strip and tin |
+| Protection | Integrated BMS (Seiko IC, 4A peak) |
 | Chemistry | Lithium Polymer |
-| Charging | Via XIAO's built-in charging circuit (USB-C) |
+| Charging | Via external TP4056-style charger OR XIAO BAT+/BAT- pads with USB-C |
 
 ### How It Powers TARS
 
 ```mermaid
 graph TD
-    BATT["LiPo 3.7V 3000mAh"]
+    BATT["HXJN LiPo 3.7V 4200mAh"]
 
-    BATT -->|"JST connector"| ESP["XIAO ESP32-S3 internal 3.3V regulator"]
+    BATT -->|"Red/Black wires -> BAT+/BAT- pads"| ESP["XIAO ESP32-S3 internal 3.3V regulator"]
 
-    BATT -->|"Wires to input"| STEP["DC-DC Step-Up"]
+    BATT -->|"Parallel tap to VIN"| STEP["MT3608 Step-Up"]
 
     STEP -->|"5V output"| SERVOS["EMAX Servos x2"]
-    STEP -->|"5V output"| AMP["MAX98357 Amplifier"]
+    STEP -->|"5V output"| AMP["MAX98357A Amplifier"]
 
-    ESP -->|"3.3V"| VL["VL53L0X Sensor"]
+    ESP -->|"3.3V"| VL1["VL53L1X #1"]
+    ESP -->|"3.3V"| VL2["VL53L1X #2"]
+    ESP -->|"3.3V"| OLED["OLED 2.42 inch"]
 ```
 
 ### Battery Life Estimation
@@ -130,18 +148,19 @@ graph TD
 | Component | Typical Current Draw |
 |-----------|---------------------|
 | ESP32-S3 (WiFi active) | ~240mA |
-| VL53L0X sensor | ~20mA |
-| MAX98357 + speaker (playing) | ~100mA |
+| 2x VL53L1X sensors | ~40mA (20mA each) |
+| OLED 2.42" (active) | ~20mA |
+| MAX98357A + speaker (playing) | ~100mA |
 | Servos (moving) | ~200mA each |
 | Servos (idle/holding) | ~10mA each |
-| **Total (everything active)** | **~790mA** |
-| **Total (idle, no servos)** | **~370mA** |
+| **Total (everything active)** | **~810mA** |
+| **Total (idle, listening, no servos)** | **~100mA** |
 
-| Mode | Estimated Runtime |
-|------|------------------|
-| Full intensive (all moving + speaking) | ~3.5 hours |
-| Normal use (occasional movement + voice) | ~5-6 hours |
-| Idle (listening, WiFi, no servos) | ~8-10 hours |
+| Mode | Estimated Runtime (4200 mAh, 80% DoD = 3360 mAh useful) |
+|------|--------------------------------------------------------|
+| Full intensive (all moving + speaking) | ~6 hours |
+| Active (conversation + servos occasional) | ~10 hours |
+| Idle (listening + OLED + WiFi, no servos) | ~33 hours |
 | Deep sleep | ~days |
 
 ### Safety Rules
@@ -185,48 +204,51 @@ void checkBattery() {
 
 ---
 
-## DC-DC Step-Up Converter
+## MT3608 DC-DC Step-Up Converter
 
 ### Why Do We Need It?
 
-The LiPo battery outputs **3.7V**, but servos and the MAX98357 amplifier need **5V**. The Step-Up converter boosts the voltage.
+The LiPo battery outputs **3.7V**, but the servos and the MAX98357A amplifier need **5V**. The MT3608 boosts the voltage.
 
 ### Specifications
 
 | Spec | Value |
 |------|-------|
+| Model | MT3608 |
 | Input Voltage | 2V - 24V |
-| Output Voltage | 5V / 9V / 12V (adjustable) |
-| Max Current | ~2A |
+| Output Voltage | 5V (adjustable via on-board potentiometer) |
+| Max Current | ~2A continuous |
 | Efficiency | ~90% |
-| Quantity | 10 modules included (use 1-2) |
+| Dimensions | 36 x 17 x 9 mm |
 
 ### Wiring
 
 ```mermaid
 graph LR
-    BATT["LiPo 3.7V"] -->|"VIN+"| STEP["DC-DC Step-Up"]
+    BATT["HXJN LiPo 3.7V"] -->|"VIN+"| STEP["MT3608 Step-Up"]
     BATT -->|"VIN-"| STEP
-    STEP -->|"VOUT+ 5V"| LOADS["Servos + MAX98357"]
+    STEP -->|"VOUT+ 5V"| LOADS["Servos + MAX98357A"]
     STEP -->|"VOUT-"| LOADS
 ```
 
-| Step-Up Pin | Connection |
+| MT3608 Pin | Connection |
 |------------|------------|
-| VIN+ | Battery positive (3.7V) |
-| VIN- / GND | Battery negative |
+| VIN+ | Battery positive (3.7V, red wire) |
+| VIN- / GND | Battery negative (black wire) |
 | VOUT+ | 5V output to servos and amplifier |
 | VOUT- / GND | Common ground with ESP32 |
 
-> **CRITICAL:** Before connecting anything, use the multimeter from the soldering kit to verify the output is exactly 5V. Adjust the potentiometer on the Step-Up module if needed.
+> **CRITICAL:** Before connecting anything, use the multimeter to verify the output is exactly 5V. Adjust the potentiometer on the MT3608 until output reads **5.0V**.
 
 ### Setup Procedure
 
-1. Connect battery to Step-Up VIN+/VIN-
-2. **Before connecting any load**, measure VOUT with multimeter
-3. Adjust the tiny potentiometer until output reads **5.0V**
-4. Connect servos and MAX98357 to VOUT
-5. Verify voltage stays stable under load (connect one servo, measure again)
+1. Connect battery red/black wires to MT3608 VIN+/VIN-
+2. **Do NOT connect any load yet**
+3. Use multimeter to measure VOUT
+4. Adjust the tiny potentiometer until output reads **5.0V** (+/- 0.1V)
+5. Mark the MT3608 module so you don't accidentally adjust it later
+6. Connect servos and MAX98357A to VOUT
+7. Verify voltage stays stable under load (connect one servo, measure again)
 
 ---
 
@@ -246,12 +268,14 @@ graph LR
 
 ### What Do They Move in TARS?
 
-TARS from Interstellar is a rectangular monolith with **articulated panels** that rotate and fold:
+TARS from Interstellar is a rectangular monolith with **articulated arms** on either side that oscillate. Each servo drives one lateral arm, pivoting at the top of the central block.
 
-| Servo | Function | Movement |
-|-------|----------|----------|
-| Servo 1 (GPIO7) | Panel A rotation | Opens/closes left body panel |
-| Servo 2 (GPIO8) | Panel B rotation | Opens/closes right body panel |
+| Servo | Function | Movement | PWM pin |
+|-------|----------|----------|---------|
+| Servo A | Left arm rotation | +/-60 deg oscillation | GPIO 43 |
+| Servo B | Right arm rotation | +/-60 deg oscillation | GPIO 44 |
+
+> Physical range of ES08MD is 0-180 deg; software-limited to **30-150 deg** so arms swing +/-60 deg around the 90 deg neutral.
 
 **Gesture examples:**
 
@@ -269,21 +293,21 @@ TARS from Interstellar is a rectangular monolith with **articulated panels** tha
 ```mermaid
 graph LR
     subgraph SERVOS["EMAX ES08MD Servos"]
-        S1_SIG["Servo 1 Signal - Orange"]
-        S1_VCC["Servo 1 VCC - Red"]
-        S1_GND["Servo 1 GND - Brown"]
-        S2_SIG["Servo 2 Signal - Orange"]
-        S2_VCC["Servo 2 VCC - Red"]
-        S2_GND["Servo 2 GND - Brown"]
+        S1_SIG["Servo A Signal - Orange"]
+        S1_VCC["Servo A VCC - Red"]
+        S1_GND["Servo A GND - Brown"]
+        S2_SIG["Servo B Signal - Orange"]
+        S2_VCC["Servo B VCC - Red"]
+        S2_GND["Servo B GND - Brown"]
     end
 
     subgraph ESP32["XIAO ESP32-S3"]
-        E_G7["GPIO7 PWM"]
-        E_G8["GPIO8 PWM"]
+        E_G7["GPIO43 PWM"]
+        E_G8["GPIO44 PWM"]
         E_GND["GND"]
     end
 
-    STEP["Step-Up 5V Output"]
+    STEP["MT3608 Step-Up 5V Output"]
 
     S1_SIG --- E_G7
     S2_SIG --- E_G8
@@ -295,9 +319,9 @@ graph LR
 
 | Servo Wire | Connection |
 |-----------|------------|
-| Orange (Signal) Servo 1 | GPIO7 on ESP32 |
-| Orange (Signal) Servo 2 | GPIO8 on ESP32 |
-| Red (VCC) both | 5V from Step-Up |
+| Orange (Signal) Servo A | GPIO43 on ESP32 |
+| Orange (Signal) Servo B | GPIO44 on ESP32 |
+| Red (VCC) both | 5V from MT3608 |
 | Brown (GND) both | Common GND with ESP32 |
 
 ### Power Warning
@@ -314,8 +338,8 @@ graph LR
 Servo servo1;
 Servo servo2;
 
-#define SERVO1_PIN 7
-#define SERVO2_PIN 8
+#define SERVO1_PIN 43
+#define SERVO2_PIN 44
 
 void setup() {
     servo1.attach(SERVO1_PIN);
@@ -397,34 +421,46 @@ Return your response as JSON with keys: response, gesture, emotion.
 ```mermaid
 graph TB
     subgraph POWER["POWER SYSTEM"]
-        BATT["LiPo 3.7V 3000mAh"]
-        STEP["DC-DC Step-Up 5V"]
+        BATT["HXJN LiPo 3.7V 4200mAh"]
+        STEP["MT3608 Step-Up 5V"]
         BATT --> STEP
     end
 
     subgraph ESP["XIAO ESP32-S3 Sense"]
         CAM["Camera OV2640"]
         MIC["Microphone PDM"]
-        SDA["GPIO5 SDA"]
-        SCL["GPIO6 SCL"]
-        BCLK["GPIO1 BCLK"]
-        LRC["GPIO2 LRC"]
-        DIN["GPIO3 DIN"]
-        PWM1["GPIO7 PWM"]
-        PWM2["GPIO8 PWM"]
-        BATC["BAT JST connector"]
+        ADC["GPIO1 ADC battery"]
+        XS1["GPIO2 XSHUT #1"]
+        XS2["GPIO3 XSHUT #2"]
+        SDA["GPIO5 SDA (shared bus)"]
+        SCL["GPIO6 SCL (shared bus)"]
+        BCLK["GPIO7 BCLK"]
+        LRC["GPIO8 LRC"]
+        DIN["GPIO9 DIN"]
+        PWM1["GPIO43 PWM Servo A"]
+        PWM2["GPIO44 PWM Servo B"]
+        BATP["BAT+/BAT- pads"]
     end
 
-    VL["VL53L0X Sensor"]
-    AMP["MAX98357 Amplifier"]
-    SPK["Speaker 3W 8 Ohm"]
-    SRV1["Servo 1 - Panel A"]
-    SRV2["Servo 2 - Panel B"]
+    VL1["VL53L1X #1 front"]
+    VL2["VL53L1X #2 45deg"]
+    OLED["OLED 2.42 inch SSD1309 (0x3C)"]
+    AMP["MAX98357A Amplifier"]
+    SPK["Speaker 3W 8 Ohm 40mm"]
+    SRV1["Servo A - left arm"]
+    SRV2["Servo B - right arm"]
     CAP["Capacitor 100-470uF"]
 
-    BATT -->|"JST"| BATC
-    SDA -->|"I2C"| VL
-    SCL -->|"I2C"| VL
+    BATT -->|"Red/Black wires"| BATP
+    BATT -->|"Divider 100k/100k"| ADC
+    SDA -->|"I2C"| VL1
+    SDA -->|"I2C"| VL2
+    SDA -->|"I2C"| OLED
+    SCL -->|"I2C"| VL1
+    SCL -->|"I2C"| VL2
+    SCL -->|"I2C"| OLED
+    XS1 --> VL1
+    XS2 --> VL2
     BCLK -->|"I2S"| AMP
     LRC -->|"I2S"| AMP
     DIN -->|"I2S"| AMP
@@ -441,16 +477,19 @@ graph TB
 
 | GPIO | Function | Phase | Device |
 |------|----------|-------|--------|
-| GPIO1 | I2S BCLK | Phase 2 | MAX98357 |
-| GPIO2 | I2S LRC | Phase 2 | MAX98357 |
-| GPIO3 | I2S DIN | Phase 2 | MAX98357 |
-| GPIO5 | I2C SDA | Phase 2 | VL53L0X |
-| GPIO6 | I2C SCL | Phase 2 | VL53L0X |
-| GPIO7 | PWM Servo 1 | Phase 3 | EMAX Servo |
-| GPIO8 | PWM Servo 2 | Phase 3 | EMAX Servo |
-| A0 | ADC Battery | Phase 3 | Battery monitor |
+| GPIO1 (A0) | ADC Battery monitor | Phase 3 | Voltage divider 100k/100k |
+| GPIO2 | XSHUT sensor #1 | Phase 2 | VL53L1X #1 |
+| GPIO3 | XSHUT sensor #2 | Phase 2 | VL53L1X #2 |
+| GPIO5 | I2C SDA (shared) | Phase 2/3 | VL53L1X x2 + OLED |
+| GPIO6 | I2C SCL (shared) | Phase 2/3 | VL53L1X x2 + OLED |
+| GPIO7 | I2S BCLK | Phase 2 | MAX98357A |
+| GPIO8 | I2S LRC | Phase 2 | MAX98357A |
+| GPIO9 | I2S DIN | Phase 2 | MAX98357A |
+| GPIO41 | PDM Mic CLK | Phase 1 | PDM Mic (on-board) |
+| GPIO42 | PDM Mic DATA | Phase 1 | PDM Mic (on-board) |
+| GPIO43 | PWM Servo A | Phase 3 | EMAX ES08MD left arm |
+| GPIO44 | PWM Servo B | Phase 3 | EMAX ES08MD right arm |
 | Built-in | Camera | Phase 1 | OV2640 |
-| Built-in | Microphone | Phase 1 | PDM Mic |
 
 ---
 
@@ -460,22 +499,31 @@ graph TB
 {
   "servos": {
     "enabled": true,
-    "servo1_pin": 7,
-    "servo2_pin": 8,
+    "servo_a_pin": 43,
+    "servo_b_pin": 44,
     "neutral_angle": 90,
+    "range_deg": 60,
     "gestures_enabled": true
   },
   "battery": {
     "monitor_enabled": true,
-    "adc_pin": "A0",
+    "adc_pin": 1,
+    "divider_ratio": 2.0,
     "low_threshold_percent": 15,
     "critical_threshold_percent": 5,
     "warn_via_whatsapp": true
   },
   "power": {
+    "step_up_model": "MT3608",
     "step_up_voltage": 5.0,
     "servo_power_save": true,
     "auto_sleep_minutes": 30
+  },
+  "display": {
+    "driver": "SSD1309",
+    "i2c_address": "0x3C",
+    "resolution": "128x64",
+    "library": "U8G2_SSD1309_128X64_NONAME0_F_HW_I2C"
   }
 }
 ```
@@ -484,21 +532,21 @@ graph TB
 
 ## Step-by-Step Build Guide
 
-### Step 1: Set Up the Step-Up Converter
+### Step 1: Set Up the MT3608 Step-Up Converter
 
-1. Connect LiPo battery to Step-Up VIN+/VIN-
+1. Connect LiPo battery red/black wires to MT3608 VIN+/VIN-
 2. **Do NOT connect any load yet**
 3. Use multimeter to measure VOUT
 4. Adjust potentiometer until output reads **5.0V** (+/- 0.1V)
-5. Mark the Step-Up module so you don't accidentally adjust it later
+5. Mark the MT3608 module so you don't accidentally adjust it later
 
 ### Step 2: Test Servos Independently
 
-1. Connect ONE servo to Step-Up 5V output
-2. Connect servo signal wire to GPIO7
-3. Upload servo test sketch (sweep 0-180 degrees)
+1. Connect ONE servo to MT3608 5V output
+2. Connect servo signal wire to GPIO43
+3. Upload servo test sketch (sweep 30-150 deg)
 4. Verify smooth movement without ESP32 resets
-5. Repeat with second servo on GPIO8
+5. Repeat with second servo on GPIO44
 6. Test both servos simultaneously
 
 ### Step 3: Add Capacitor
@@ -512,17 +560,18 @@ graph TB
 ### Step 4: Battery Power Test
 
 1. Disconnect USB-C
-2. Connect LiPo to XIAO JST battery port
+2. Connect HXJN LiPo red/black wires to XIAO BAT+/BAT- pads (check polarity!)
 3. Verify XIAO boots and connects to WiFi
-4. Verify VL53L0X reads distances
-5. Verify speaker plays audio
-6. Verify servos move
-7. Check battery voltage via ADC — should read ~3.7-4.2V
+4. Verify both VL53L1X sensors read distances
+5. Verify OLED shows status screen
+6. Verify speaker plays audio
+7. Verify servos move
+8. Check battery voltage via ADC — should read ~3.7-4.2V
 
 ### Step 5: Integrated Test
 
 1. All components on battery power (no USB)
-2. Approach TARS → VL53L0X detects → Groq responds → speaker plays → servos gesture
+2. Approach TARS → VL53L1X detects → Groq responds → speaker plays → servos gesture → OLED updates
 3. Monitor battery voltage over time
 4. Test WhatsApp messages still work
 5. Test bilingual responses with gestures
@@ -540,19 +589,24 @@ graph TB
 
 ### Hardware
 - [ ] EMAX ES08MD servos x2 purchased and received
-- [ ] DC-DC Step-Up modules purchased and received
-- [ ] LiPo 3.7V 3000mAh battery purchased and received
-- [ ] Step-Up output calibrated to 5.0V with multimeter
+- [ ] MT3608 Step-Up module purchased and received
+- [ ] HXJN 4200mAh 606090 LiPo battery (with BMS, bare wires) purchased and received
+- [ ] Waveshare 2.42" OLED 128x64 purchased and received
+- [ ] MT3608 output calibrated to 5.0V with multimeter
 - [ ] Capacitor (100-470uF) soldered on 5V line
-- [ ] Servos wired to GPIO7 and GPIO8
-- [ ] Servos powered from Step-Up 5V
-- [ ] Battery connected to XIAO JST port
+- [ ] Servos wired to GPIO43 and GPIO44
+- [ ] Servos powered from MT3608 5V
+- [ ] Battery wires soldered to XIAO BAT+/BAT- pads (or external TP4056 charger)
+- [ ] OLED wired to shared I2C bus (GPIO5/GPIO6)
 - [ ] All Phase 2 components still connected
 
 ### Software
 - [ ] ESP32Servo library installed
-- [ ] Servo test sketch works (sweep 0-180)
+- [ ] U8g2 library installed (OLED)
+- [ ] Pololu VL53L1X library installed
+- [ ] Servo test sketch works (sweep 30-150 deg)
 - [ ] Gesture functions implemented
+- [ ] OLED status screen renders
 - [ ] Battery monitoring via ADC works
 - [ ] Low battery WhatsApp warning works
 - [ ] Auto-sleep configured
@@ -560,12 +614,13 @@ graph TB
 ### Integration
 - [ ] Runs on battery power without USB
 - [ ] All sensors work on battery
-- [ ] Speaker works on battery via Step-Up
+- [ ] Speaker works on battery via MT3608
 - [ ] Servos move smoothly on battery
+- [ ] OLED updates synchronized with states
 - [ ] No brownouts or resets during servo movement
 - [ ] Groq responses include gesture commands
 - [ ] Gestures execute synchronized with speech
-- [ ] Battery lasts minimum 3 hours intensive use
+- [ ] Battery lasts minimum 6 hours intensive use
 
 ---
 
@@ -573,13 +628,14 @@ graph TB
 
 | Problem | Solution |
 |---------|----------|
-| ESP32 resets when servos move | Capacitor missing or too small. Add 470uF. Check Step-Up output under load. |
-| Step-Up output not 5V | Adjust potentiometer with small screwdriver. Measure with multimeter. |
+| ESP32 resets when servos move | Capacitor missing or too small. Add 470uF. Check MT3608 output under load. |
+| MT3608 output not 5V | Adjust potentiometer with small screwdriver. Measure with multimeter. |
 | Servo jitters at idle | Normal for cheap servos. Use servo.detach() when not moving to stop jitter. |
-| Battery drains fast | Disable WiFi when not needed. Detach servos when idle. Use deep sleep. |
-| Servo doesn't reach full range | Some servos have < 180 deg range. Calibrate min/max pulse width in code. |
-| Battery won't charge via USB | Check JST connector polarity. XIAO expects specific pin orientation. |
+| Battery drains fast | Disable WiFi when not needed. Detach servos when idle. Use deep sleep. Turn off OLED. |
+| Servo doesn't reach full range | Software-limited to 30-150 deg. Calibrate min/max pulse width in code if needed. |
+| Battery won't charge | HXJN has bare wires; use an external TP4056 module or solder to XIAO BAT pads (with caution). |
 | Servo makes grinding noise | Don't push past mechanical limits. Reduce angle range if hitting physical stops. |
+| OLED blank | Check I2C address 0x3C with scanner. Ensure U8g2 uses `SSD1309_128X64_NONAME0`. |
 
 ---
 
@@ -587,12 +643,13 @@ graph TB
 
 ```mermaid
 graph LR
-    BATT["LiPo 3000mAh"] --> ESP_DRAW["ESP32-S3: 240mA"]
-    BATT --> VL_DRAW["VL53L0X: 20mA"]
+    BATT["HXJN 4200mAh"] --> ESP_DRAW["ESP32-S3: 240mA"]
+    BATT --> VL_DRAW["2x VL53L1X: 40mA"]
+    BATT --> OLED_DRAW["OLED: 20mA"]
     BATT --> AMP_DRAW["Audio: 100mA"]
     BATT --> SRV_DRAW["Servos: 400mA peak"]
-    BATT --> TOTAL["Total: 760mA peak"]
-    TOTAL --> RUNTIME["Runtime: 3.5h intensive"]
+    BATT --> TOTAL["Total: ~800mA peak"]
+    TOTAL --> RUNTIME["Runtime: 6h intensive, 10h active, 33h idle"]
 ```
 
 ---
@@ -601,21 +658,21 @@ graph LR
 
 | New Capability | Description |
 |---------------|-------------|
-| Battery power | Runs ~3.5h without USB cable |
-| Servo movement | 2 articulated panels with gestures |
-| Gesture sync | Movements synchronized with speech |
+| Battery power | Runs 6-10h without USB cable |
+| Servo movement | 2 articulated arms with gestures (+/-60 deg) |
+| OLED face | Real-time status, mood, transcription, battery % |
+| Gesture sync | Movements + display synchronized with speech |
 | Power management | Battery monitoring, auto-sleep, low battery alerts |
+| PETG chassis | Canonical TARS 35 cm body (see PHASE3_MECHANICS.md) |
 | Portable | Can be placed anywhere with WiFi |
 
 ## What Phase 3 Still Cannot Do
 
 | Limitation | Solved in |
 |------------|-----------|
-| No physical body/enclosure | Phase 4 |
-| No OLED display face | Phase 4 |
-| Components on breadboard | Phase 4 |
-| Wires exposed | Phase 4 |
-| Not waterproof | Phase 4 (ASA material) |
+| Firmware not unified into a single `tars.ino` monolith | Phase 4 |
+| No soldered final PCB (still on breadboard/proto) | Phase 4 |
+| No paint/finishing on printed body | Phase 4 |
 
 ---
 
@@ -623,11 +680,13 @@ graph LR
 
 | Category | Cost |
 |----------|------|
-| **Phase 3 hardware** | **€46.67** |
+| **Phase 3 hardware** | **~€84.46** |
 | EMAX ES08MD Servos x2 | €25.49 |
-| DC-DC Step-Up x10 | €7.99 |
-| LiPo Battery 3000mAh | €13.19 |
-| **Cumulative hardware (P1+P2+P3)** | **€141.52** |
+| MT3608 DC-DC Step-Up | €7.99 |
+| HXJN LiPo 4200mAh 606090 | €22.99 |
+| Waveshare 2.42" OLED 128x64 | €21.99 |
+| PETG filament (~264 g) | €~6.00 |
+| **Cumulative hardware (P1+P2+P3)** | **~€191.30** |
 | **Monthly services (unchanged)** | **~€2-4** |
 
 ---
