@@ -30,6 +30,9 @@ namespace vision {
 
 static bool s_ready = false;
 
+// forward (defined below)
+String captureJpegBase64();
+
 bool begin() {
 #if !VISION_ENABLED
     return false;
@@ -108,6 +111,10 @@ static uint32_t s_lastHash = 0;
 static String   s_lastDescription;
 
 static String captureBase64() {
+    return captureJpegBase64();
+}
+
+String captureJpegBase64() {
     if (!s_ready) {
         Serial.println("[CAM] not ready");
         return "";

@@ -32,6 +32,7 @@
 #include "wifi_manager.h"
 #include "audio_recorder.h"
 #include "groq_client.h"
+#include "gemini_client.h"
 #include "telegram_client.h"
 #include "memory_client.h"
 #include "vision_client.h"
@@ -49,7 +50,12 @@ static void banner() {
     Serial.println(F("=============================================="));
     Serial.printf ("  Humor level: %d%%\n", TARS_HUMOR_LEVEL);
     Serial.printf ("  STT model  : %s\n", GROQ_STT_MODEL);
+#if GEMINI_ENABLED
+    Serial.printf ("  LLM model  : %s  (vision en vivo=%s)\n",
+                   GEMINI_MODEL, GEMINI_ALWAYS_SEE ? "si" : "no");
+#else
     Serial.printf ("  LLM model  : %s\n", GROQ_LLM_MODEL);
+#endif
     Serial.println(F("==============================================="));
 }
 
@@ -183,10 +189,23 @@ static void handleUserText(const String& userText) {
     // 4. LOOK o CHAT: producir respuesta real.
     if (reply.length() == 0) {
         String memories = mem::recall(userText);
+
+#if GEMINI_ENABLED
+        // --- Cerebro Gemini 2.0 Flash ---
+        // En cada turno adjuntamos un JPEG fresco de la camara para que TARS
+        // "vea en tiempo real" sin pipeline aparte. No hay rama de vision
+        // separada: el modelo recibe texto + imagen en la misma llamada.
+        bool wantImage = GEMINI_ALWAYS_SEE
+                         || (it.kind == intent::LOOK)
+                         || vision::isVisionRequest(low);
+        reply = gemini::ask(userText, memories, wantImage);
+        if (wantImage && reply.length() > 0) {
+            brain::logMental(String("respondi viendo la camara: ") + reply);
+        }
+#else
+        // --- Fallback legacy: Groq + vision separada ---
         if (it.kind == intent::LOOK || vision::isVisionRequest(low)) {
             Serial.println(F("[loop] Vision branch."));
-            // Si el bucle de exploracion YA vio algo hace poco, reutilizamos ese frame
-            // (evita re-capturar y re-subir cuando TARS ya esta mirando en tiempo real).
             String seen;
             const unsigned long VISION_CACHE_FRESH_MS = 4000;
             if (brain::lastVisionAgeMs() < VISION_CACHE_FRESH_MS) {
@@ -201,7 +220,6 @@ static void handleUserText(const String& userText) {
                 }
             }
             if (seen.length() > 0) {
-                // TARS reacciona a lo que SUS ojos han visto, con personalidad y memoria.
                 String fused = String("El humano me dice: \"") + userText +
                     "\". Mis ojos ven ahora mismo: \"" + seen +
                     "\". Responde COMO TARS, como si lo vieras tu, sin decir 'parece que veo' ni 'la imagen muestra'. Reacciona en 1-2 frases con tu humor.";
@@ -211,6 +229,7 @@ static void handleUserText(const String& userText) {
         if (reply.length() == 0) {
             reply = groq::ask(userText, memories);
         }
+#endif
     }
 
     reply.trim();

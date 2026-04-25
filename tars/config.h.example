@@ -15,6 +15,27 @@
 #define GROQ_STT_MODEL   "whisper-large-v3-turbo"
 #define GROQ_LLM_MODEL   "llama-3.1-8b-instant"
 
+// ---------- Gemini (Google AI Studio) — cerebro principal + vision ----------
+// 1. Entra en https://aistudio.google.com/apikey
+// 2. "Create API Key" -> copia la clave (empieza por "AIza...").
+// 3. No la subas a git. Pegala aqui en tu config.h LOCAL.
+// Usamos Gemini 2.0 Flash: rapido, multimodal nativo y no alucina como
+// los VLM pequenos. En cada turno le enviamos un JPEG fresco de la camara
+// + texto -> "ve en tiempo real" sin tocar otro modelo aparte.
+#define GEMINI_API_KEY      "AIzaxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+#define GEMINI_MODEL        "gemini-2.0-flash"
+#define GEMINI_ENABLED      true
+// Si true, adjunta un frame de camara a CADA respuesta (aunque el usuario
+// no diga "mira"). Asi TARS siempre razona con vision en tiempo real.
+#define GEMINI_ALWAYS_SEE   true
+// Rafaga multi-frame: en vez de 1 foto, enviamos N frames espaciados
+// GEMINI_BURST_INTERVAL_MS ms cada uno. El modelo los ve como "video corto"
+// y detecta movimiento, gestos, cambios de escena. Pon N=1 para volver al
+// modo foto. 3-5 frames es el punto dulce (buena percepcion de movimiento,
+// latencia < 2 s total).
+#define GEMINI_BURST_FRAMES        3
+#define GEMINI_BURST_INTERVAL_MS   300
+
 // ---------- Telegram Bot ----------
 // 1. Telegram -> @BotFather -> /newbot -> copia el TOKEN.
 // 2. Manda /start a tu nuevo bot.

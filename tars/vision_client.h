@@ -20,4 +20,9 @@ namespace vision {
 
     // Last successful description from describe(). Empty until first call.
     const String& lastDescription();
+
+    // Captura un JPEG fresco de la camara y lo devuelve ya en base64
+    // (listo para meter en un JSON de Gemini / Groq vision). Cadena vacia
+    // si la camara no esta lista o falla la captura.
+    String captureJpegBase64();
 }
